@@ -6,7 +6,7 @@
 
 using namespace std;
 
-#define hight_init 1.3f
+#define hight_init 0.3f
 
 geometry_msgs::PoseStamped pose;
 geometry_msgs::PoseStamped current_pose;
