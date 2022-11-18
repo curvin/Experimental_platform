@@ -1,5 +1,5 @@
 <launch>
-    <arg name="fcu_url" default="udp://:14550@192.168.31.18:12345"/>
+    <arg name="fcu_url" default="udp://:14550@192.168.31.33:12345"/>
     <arg name="server" default="192.168.31.128"/>
     <arg name="gcs_url" default="udp://@192.168.31.27" />
 
