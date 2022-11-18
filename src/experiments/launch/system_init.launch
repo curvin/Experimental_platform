@@ -1,0 +1,21 @@
+<launch>
+    <arg name="fcu_url" default="udp://:14550@192.168.31.18:12345"/>
+    <arg name="server" default="192.168.31.128"/>
+    <arg name="gcs_url" default="udp://@192.168.31.27" />
+
+    <!-- This node will launch the ROS driver for Realsense T265 -->
+    <include file="$(find vrpn_client_ros)/launch/sample.launch">
+        <arg name="server" default="$(arg server)"/>
+    </include>
+
+    <!-- This node will launch MAVROS -->
+    <include file="$(find mavros)/launch/px4.launch">
+        <arg  name="fcu_url" value="$(arg fcu_url)" />
+        <arg  name="gcs_url" value="$(arg gcs_url)" />
+    </include>
+
+    <!-- This node will launch the node that bridges realsense-ros and MAVROS -->
+    <node pkg="topic_tools" type="relay" name="vrpn_to_mavros" args="/vrpn_client_node/UAV_01/pose /mavros/vision_pose/pose" />
+    
+</launch>
+
