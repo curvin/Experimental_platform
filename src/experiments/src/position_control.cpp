@@ -113,7 +113,7 @@ int main(int argc, char **argv)
         ros::spinOnce();
         rate.sleep();
     }
-    ROS_INFO("UAV armed,");
+    ROS_INFO("UAV  armed,");
 
     while (ros::ok())
     {
