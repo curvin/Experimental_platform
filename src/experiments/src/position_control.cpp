@@ -3,77 +3,27 @@
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
+#include <iostream>
+#include <fstream>
+#include <typeinfo>
+#include <iomanip>
 
 using namespace std;
 
+int NUM_point = 100;
 #define hight_init 0.3f
 
+string data_file = "src/experiments/src/data.txt";
 geometry_msgs::PoseStamped pose;
 geometry_msgs::PoseStamped current_pose;
 
 bool pose_init_done = false;
 
-int NUM_point = 0;
 int poseCount = 0;
-double poseArr[][3] = {
+float poseArr[500][3] = {
     {0, 0, hight_init}, //起飞
 
-    //从这开始执行飞行任务
-    -0.56 - 0.875 0},
-       -0.455 - 0.7 1.5
-}
-,
-    0.07 - 0.7 1.5
-}
-,
-    0.595 - 0.7 1.5
-}
-,
-    1.12 - 0.7 1.5
-}
-,
-    1.12 - 0.175 1.5
-}
-,
-    0.595 - 0.175 1.5
-}
-,
-    0.07 - 0.175 1.5
-}
-,
-    0.07 0.35 1.5
-}
-,
-    0.07 0.875 1.5
-}
-,
-    -0.455 0.875 1.5
-}
-,
-    -0.455 0.35 1.5
-}
-,
-    -0.455 - 0.175 1.5
-}
-,
-    -0.455 - 0.7 1.5
-}
-,
-    0.07 - 0.7 1.5
-}
-,
-    0.07 - 0.175 1.5
-}
-,
-    0.07 0.35 1.5
-}
-,
-    -0.455 0.35 1.5
-}
-,
-    -0.455 0.875 1.5 0.07 0.875 1.5 0.595 0.875 1.5 1.12 0.875 1.5 1.645 0.875 1.5 1.645 1.073333333 0.6 1.645 0.35 1.5 1.12 0.35 1.5 0.595 0.35 1.5 0.595 0.875 1.5 1.12 0.875 1.5 1.645 0.875 1.5 1.645 0.35 1.5 1.12 0.35 1.5 1.12 - 0.175 1.5 1.12 - 0.7 1.5 0.595 - 0.7 1.5 0.595 - 0.175 1.5 0.595 0.35 1.5 1.12 0.35 1.5 1.645 0.35 1.5 1.645 0.875 1.5 1.12 0.875 1.5 0.595 0.875 1.5 0.07 0.875 1.5 - 0.455 0.875 1.5 - 0.455 0.35 1.5 - 0.672 0.651 0.6 0.07 0.35 1.5 0.07 - 0.175 1.5 0.07 - 0.7 1.5 - 0.455 - 0.7 1.5 - 0.455 - 0.175 1.5 0.595 0.35 1.5 1.12 0.35 1.5 1.12 - 0.175 1.5 1.12 - 0.7 1.5 0.595 - 0.7 1.5 0.595 - 0.175 1.5 0.07 0.35 1.5 - 0.455 0.35 1.5 - 0.455 0.875 1.5 0.07 0.875 1.5 0.595 0.875 1.5 1.12 0.875 1.5 1.645 0.875 1.5 1.645 0.35 1.5 1.12 0.35 1.5 0.91 0.595 0.6 0.595 0.35 1.5 0.595 - 0.175 1.5 0.07 - 0.175 1.5 0.07 - 0.7 1.5 - 0.455 - 0.7 1.5 - 0.455 - 0.175 1.5 - 0.455 0.35 1.5 0.07 0.35 1.5 0.07 0.875 1.5 - 0.455 0.875 1.5 0.595 0.875 1.5 0.595 0.35 1.5 1.12 0.35 1.5
-}
-;
+};
 
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr &msg)
@@ -128,6 +78,40 @@ void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
     }
 }
 
+void load_point(void)
+{
+    ifstream infile;
+    infile.open(data_file.c_str());
+    for (int i = 1; i < 500; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            infile >> poseArr[i][j];
+        }
+    }
+    infile.close();
+
+    for (int i = 1; i < 500; i++)
+    {
+        if (poseArr[i][0] == 0 && poseArr[i][1] == 0 && poseArr[i][2] == 0)
+        {
+            NUM_point = i;
+            break;
+        }
+    }
+
+    for (int i = 0; i < NUM_point; i++)
+    {
+        cout << "{ ";
+        for (int j = 0; j < 3; j++)
+        {
+            cout << std::right << setw(7) << poseArr[i][j] << ", ";
+        }
+        cout << "}\n";
+    }
+    ROS_INFO("NUM_point is %d", NUM_point);
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "position_control_node");
@@ -141,7 +125,7 @@ int main(int argc, char **argv)
     // the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
 
-    NUM_point = sizeof(poseArr) / sizeof(poseArr[0]);
+    load_point();
 
     // wait for FCU connection
     while (ros::ok() && !current_state.connected && pose_init_done)
