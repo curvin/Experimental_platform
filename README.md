@@ -55,6 +55,7 @@ https://firmware.ardupilot.org/Tools/MAVESP8266/latest/
 ``` shell
 sudo apt-get install ros-<ros_vision>-mavros ros-<ros_vision>-mavros-extras
 wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/
+	 wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/
 	 install_geographiclib_datasets.sh
 sudo bash ./install_geographiclib_datasets.sh
 #若wget失败，可直接下载sh文件运行
@@ -98,9 +99,14 @@ roslaunch vrpn_client_ros sample.launch  server：=192.168.31.128
 
 # 实验平台操作
 
-## 位置控制（无位姿）
+## 位置控制
 
 ``` shell 
+#修改system_init.launch 
+#将参数fcu_url修改为当前无人机的ip地址
+#将参数server修改为动捕的ip地址
+#将参数gcs_url修改为运行qgc主机的ip地址
+
 #完成上述操作，运行launch
 roslaunch experiments  system_init.launch 
 
@@ -108,20 +114,11 @@ roslaunch experiments  system_init.launch
 rostopic echo /mavros/state
 #检查是否能切换到位置控制模式，可以切换则进行下一步操作
 
-#打开position_control.cpp，将坐标点复制到poseArr数组
-double poseArr[][3] = {
-    {0, 0, hight_init}, //起飞
-    {0, 0, hight_init}, //回到坐标原点
-    //从这开始执行飞行任务
-    {0, 0, 0.3},
-    {0, 0, 0.3},
-};
-
-#重新编译ROS工作文件
-catkin_make
+#打开position.txt，将坐标点复制到文件中
 
 #运行position_control节点
 rosrun experiments position_control 
+#检查读取的坐标点是否有误，无误则进行下一步
 
-#无人机自动解锁起飞，执行完任务后在任务终点悬停
+#无人机解锁，切换到offboard模式，无人机自动起飞，执行完任务后在任务终点悬停
 ```

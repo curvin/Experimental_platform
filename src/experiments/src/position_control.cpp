@@ -13,7 +13,7 @@ using namespace std;
 int NUM_point = 100;
 #define hight_init 0.3f
 
-string data_file = "src/experiments/src/data.txt";
+string data_file = "src/experiments/src/position.txt";
 geometry_msgs::PoseStamped pose;
 geometry_msgs::PoseStamped current_pose;
 
