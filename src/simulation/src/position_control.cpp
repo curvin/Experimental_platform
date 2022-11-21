@@ -119,7 +119,8 @@ int main(int argc, char **argv)
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, state_cb);
     ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 10);
-
+    ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
+    ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
     ros::Subscriber position_sub = nh.subscribe<geometry_msgs::PoseStamped>("vrpn_client_node/UAV_01/pose", 1000, position_cb);
 
     // the setpoint publishing rate MUST be faster than 2Hz
@@ -143,17 +144,40 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
-    ros::Time last_request = ros::Time::now();
+    mavros_msgs::SetMode offb_set_mode;
+    offb_set_mode.request.custom_mode = "OFFBOARD";
 
-    while (ros::ok() && !current_state.armed)
-    {
-        ros::spinOnce();
-        rate.sleep();
-    }
-    ROS_INFO("UAV  armed,");
+    mavros_msgs::CommandBool arm_cmd;
+    arm_cmd.request.value = true;
+
+    ros::Time last_request = ros::Time::now();
 
     while (ros::ok())
     {
+
+        if (current_state.mode != "OFFBOARD" &&
+            (ros::Time::now() - last_request > ros::Duration(5.0)))
+        {
+            if (set_mode_client.call(offb_set_mode) &&
+                offb_set_mode.response.mode_sent)
+            {
+                ROS_INFO("Offboard enabled");
+            }
+            last_request = ros::Time::now();
+        }
+        else
+        {
+            if (!current_state.armed &&
+                (ros::Time::now() - last_request > ros::Duration(5.0)))
+            {
+                if (arming_client.call(arm_cmd) &&
+                    arm_cmd.response.success)
+                {
+                    ROS_INFO("Vehicle armed");
+                }
+                last_request = ros::Time::now();
+            }
+        }
 
         local_pos_pub.publish(pose);
 
