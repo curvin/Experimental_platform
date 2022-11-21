@@ -35,7 +35,7 @@ MPC_Z_P 1.20
 - 首先在自稳模式下将PID参数调稳定，调试`Multicopter Rate Control`菜单下`MC_ROLLRATE_P`, `MC_ROLLRATE_I`, `MC_ROLLRATE_D`,`MC_PITCHRATE_P`,`MC_PITCHRATE_I`,`MC_PITCHRATE_D`这六个参数即可
 - 自稳PID调试完成后，此时飞行会发现飞行器总是会朝某个方向“倾斜”飞行，此时最好先将机体各部位都固定稳定，中心最好在机体中心（电池位置最好也固定，不然电池的拆卸也是影响重心的一个要点）。然后调试`Sensors`菜单下的`SENS_BOARD_X_OFF`和`SENS_BOARD_Y_OFF`两个参数，最完美的状态是调试到roll和pitch不总是朝一个方向飞行，只会随机朝某个方向缓慢飞行
 - 随后切换到offboard模式进行定位调试，如果设置指定高度后飞行器一直飞行不到指定高度，请增大`Multicopter Position Control`菜单下的`MPC_THR_HOVER`和`MPC_Z_P`参数
-- -   随后调试定位的参数，`Multicopter Position Control`菜单下的`MPC_XY_P`,`MPC_XY_TRAJ_P`,`MPC_XY_VEL_D_ACC`,`MPC_XY_VEL_I_ACC`,`MPC_XY_VEL_P_ACC`这几个参数，注意增大其中`MPC_XY_VEL_I_ACC`参数对减小偏移有显著效果
+- 随后调试定位的参数，`Multicopter Position Control`菜单下的`MPC_XY_P`,`MPC_XY_TRAJ_P`,`MPC_XY_VEL_D_ACC`,`MPC_XY_VEL_I_ACC`,`MPC_XY_VEL_P_ACC`这几个参数，注意增大其中`MPC_XY_VEL_I_ACC`参数对减小偏移有显著效果
 
 ## MAVESP8266
 
