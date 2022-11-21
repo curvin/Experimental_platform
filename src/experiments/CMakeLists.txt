@@ -154,10 +154,6 @@ include_directories(
 include_directories("/usr/include/eigen3")
 
 
-add_executable(position_angle_control src/position_angle_control.cpp)
-target_link_libraries(position_angle_control
-  ${catkin_LIBRARIES}
-)
 
 add_executable(position_control src/position_control.cpp)
 target_link_libraries(position_control

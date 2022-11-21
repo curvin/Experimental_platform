@@ -1,35 +1,28 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <iostream>
-#include <Eigen/Eigen>
-#include <stdlib.h>
-#include <Eigen/Geometry>
-#include <Eigen/Core>
-#include <vector>
-#include <math.h>
+#include <fstream>
+#include <typeinfo>
+#include <iomanip>
 
 using namespace std;
-using namespace Eigen;
 
+int NUM_point = 100;
 #define hight_init 0.3f
 
-geometry_msgs::PoseStamped attitude;
+string data_file = "src/simulation/src/position.txt";
 geometry_msgs::PoseStamped pose;
 geometry_msgs::PoseStamped current_pose;
 
-geometry_msgs::Twist velocity;
 bool pose_init_done = false;
 
-int NUM_point = 0;
 int poseCount = 0;
-double poseArr[][3] = {
+float poseArr[500][3] = {
     {0, 0, hight_init}, //起飞
-    {0, 0, hight_init}, //回到坐标原点
-    //从这开始执行飞行任务
+
 };
 
 mavros_msgs::State current_state;
@@ -48,38 +41,6 @@ float ABS(float num)
     {
         return num;
     }
-}
-
-void Quaterniond2Euler(const double x, const double y, const double z, const double w)
-{
-    Eigen::Quaterniond q;
-    q.x() = x;
-    q.y() = y;
-    q.z() = z;
-    q.w() = w;
-
-    Eigen::Vector3d euler = q.toRotationMatrix().eulerAngles(2, 1, 0);
-    cout << "Quaterniond2Euler result is:" << endl;
-    cout << "x = " << euler[2] * 57.3 << endl;
-    cout << "y = " << euler[1] * 57.3 << endl;
-    cout << "z = " << euler[0] * 57.3 << endl
-         << endl;
-}
-
-Eigen::Quaterniond euler2Quaternion(const double roll, const double pitch, const double yaw)
-{
-    Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitZ());
-    Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitX());
-
-    Eigen::Quaterniond q = rollAngle * yawAngle * pitchAngle;
-    cout << "Euler2Quaternion result is:" << endl;
-    cout << "x = " << q.x() << endl;
-    cout << "y = " << q.y() << endl;
-    cout << "z = " << q.z() << endl;
-    cout << "w = " << q.w() << endl
-         << endl;
-    return q;
 }
 
 void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
@@ -115,29 +76,56 @@ void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
         pose_init_done = true;
         ROS_INFO("position init x:%f y:%f,z:%f", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
     }
+}
 
-    // ROS_INFO("x:%f y:%f z:%f", position_now->pose.position.x, position_now->pose.position.y, position_now->pose.position.z);
+void load_point(void)
+{
+    ifstream infile;
+    infile.open(data_file.c_str());
+    for (int i = 1; i < 500; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            infile >> poseArr[i][j];
+        }
+    }
+    infile.close();
+
+    for (int i = 1; i < 500; i++)
+    {
+        if (poseArr[i][0] == 0 && poseArr[i][1] == 0 && poseArr[i][2] == 0)
+        {
+            NUM_point = i;
+            break;
+        }
+    }
+
+    for (int i = 0; i < NUM_point; i++)
+    {
+        cout << "{ ";
+        for (int j = 0; j < 3; j++)
+        {
+            cout << std::right << setw(7) << poseArr[i][j] << ", ";
+        }
+        cout << "}\n";
+    }
+    ROS_INFO("NUM_point is %d", NUM_point);
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "position_angle_control_node");
+    ros::init(argc, argv, "position_control_node");
     ros::NodeHandle nh;
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, state_cb);
     ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 10);
-    ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
-    ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
-
-    ros::Publisher attitude_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_attitude/attitude", 10);
-    ros::Publisher velocity_pub = nh.advertise<geometry_msgs::Twist>("mavros/setpoint_velocity/cmd_vel_unstamped", 10);
 
     ros::Subscriber position_sub = nh.subscribe<geometry_msgs::PoseStamped>("vrpn_client_node/UAV_01/pose", 1000, position_cb);
 
     // the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
 
-    NUM_point = sizeof(poseArr) / sizeof(poseArr[0]);
+    load_point();
 
     // wait for FCU connection
     while (ros::ok() && !current_state.connected && pose_init_done)
@@ -147,8 +135,6 @@ int main(int argc, char **argv)
     }
     ROS_INFO("UAV connected");
 
-    Eigen::Quaterniond attitude_Quaternion = euler2Quaternion(0, 0, 0);
-
     // send a few setpoints before starting
     for (int i = 100; ros::ok() && i > 0; --i)
     {
@@ -157,23 +143,19 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
-    attitude.pose.orientation.x = attitude_Quaternion.x();
-    attitude.pose.orientation.y = attitude_Quaternion.y();
-    attitude.pose.orientation.z = attitude_Quaternion.z();
-    attitude.pose.orientation.w = attitude_Quaternion.w();
-
     ros::Time last_request = ros::Time::now();
+
+    while (ros::ok() && !current_state.armed)
+    {
+        ros::spinOnce();
+        rate.sleep();
+    }
+    ROS_INFO("UAV  armed,");
 
     while (ros::ok())
     {
 
-         velocity.angular.z = 8;
-        velocity.linear.x = 0.2;
-
-        velocity_pub.publish(velocity);
-        // local_pos_pub.publish(pose);
-
-        // attitude_pub.publish(attitude);
+        local_pos_pub.publish(pose);
 
         ros::spinOnce();
         rate.sleep();
