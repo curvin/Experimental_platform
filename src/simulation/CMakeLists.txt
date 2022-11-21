@@ -156,6 +156,12 @@ target_link_libraries(offboard
   ${catkin_LIBRARIES}
 )
 
+add_executable(simulation_position_control src/position_control.cpp)
+target_link_libraries(simulation_position_control
+  ${catkin_LIBRARIES}
+)
+
+
 #############
 ## Install ##
 #############
