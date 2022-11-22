@@ -4,7 +4,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/AttitudeTarget.h>
-#include <iostream>
+
 #include <fstream>
 #include <typeinfo>
 #include <iomanip>
@@ -16,7 +16,7 @@
 #include <Eigen/Core>
 #include <vector>
 #include <math.h>
-#include <tf/tf.h>
+#include <std_msgs/Bool.h>
 
 using namespace std;
 using namespace Eigen;
@@ -63,19 +63,14 @@ Eigen::Quaterniond euler2Quaternion(const double roll, const double pitch, const
     Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
 
     Eigen::Quaterniond q = rollAngle * yawAngle * pitchAngle;
-    // cout << "Euler2Quaternion result is : " << endl;
-    // cout << "x =  " << q.x() << endl;
-    // cout << "y =  " << q.y() << endl;
-    // cout << "z =  " << q.z() << endl;
-    // cout << "w =  " << q.w() << endl
-    //      << endl;
+
     return q;
 }
 
-void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
+void keyboard_cb(const std_msgs::Bool::ConstPtr &keyboard_now)
 {
-    current_pose = *position_now;
-    if (ABS(position_now->pose.position.x - poseArr[poseCount][0]) < 0.1 && ABS(position_now->pose.position.y - poseArr[poseCount][1]) < 0.1 && ABS(position_now->pose.position.z - poseArr[poseCount][2]) < 0.1)
+
+    if (keyboard_now->data)
     {
         poseCount++;
         if (poseCount < NUM_point)
@@ -88,7 +83,7 @@ void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
             ROS_INFO("Num %d Position Setted", poseCount);
             ROS_INFO("x:%f y:%f z:%f angle:%f", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z, angle);
 
-            Eigen::Quaterniond angel = euler2Quaternion(0, 0, angle);
+            Eigen::Quaterniond angel = euler2Quaternion(0, 0, angle / 180 * 3.14);
 
             pose.pose.orientation.w = angel.w();
             pose.pose.orientation.x = angel.x();
@@ -100,6 +95,12 @@ void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
             ROS_INFO("Mission accomplished !!!");
         }
     }
+}
+
+void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
+{
+    current_pose = *position_now;
+
     if (!pose_init_done && position_now->pose.position.x != 0 && position_now->pose.position.y != 0 && position_now->pose.position.z != 0)
     {
         pose.pose.position.x = position_now->pose.position.x;
@@ -152,26 +153,16 @@ void load_point(void)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "position_control_node");
+    ros::init(argc, argv, "keyboard_node");
     ros::NodeHandle nh;
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, state_cb);
     ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 10);
     ros::Subscriber position_sub = nh.subscribe<geometry_msgs::PoseStamped>("mavros/local_position/pose", 10, position_cb);
+    ros::Subscriber keyboard_sub = nh.subscribe<std_msgs::Bool>("uav/keyboard", 10, keyboard_cb);
 
     // the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
-
-    // tf::Quaternion q;
-    // q.setRPY(1, 1, 1);
-    // cout << "Euler2Quaternion result is : " << endl;
-    // cout << "x =  " << q.x << endl;
-    // cout << "y =  " << q.y << endl;
-    // cout << "z =  " << q.z << endl;
-    // cout << "w =  " << q.w << endl
-    //      << endl;
-
-    tf::Quaternion createQuaternionFromRPY(double roll, double pitch, double yaw);
 
     load_point();
 
@@ -196,6 +187,8 @@ int main(int argc, char **argv)
     while (ros::ok())
     {
 
+        ROS_INFO("current-> x:%f y:%f z:%f", current_pose.pose.position.x, current_pose.pose.position.y, current_pose.pose.position.z);
+        ROS_INFO("set    -> x:%f y:%f z:%f", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
         local_pos_pub.publish(pose);
 
         ros::spinOnce();

@@ -163,6 +163,16 @@ target_link_libraries(attitude
   ${catkin_LIBRARIES}
 )
 
+add_executable(attitude_step src/attitude_step.cpp)
+target_link_libraries(attitude_step
+  ${catkin_LIBRARIES}
+)
+
+add_executable(keyboard src/keyboard.cpp)
+target_link_libraries(keyboard
+  ${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############

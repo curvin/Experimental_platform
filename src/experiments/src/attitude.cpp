@@ -16,7 +16,6 @@
 #include <Eigen/Core>
 #include <vector>
 #include <math.h>
-#include <tf/tf.h>
 
 using namespace std;
 using namespace Eigen;
@@ -88,7 +87,7 @@ void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
             ROS_INFO("Num %d Position Setted", poseCount);
             ROS_INFO("x:%f y:%f z:%f angle:%f", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z, angle);
 
-            Eigen::Quaterniond angel = euler2Quaternion(0, 0, angle);
+            Eigen::Quaterniond angel = euler2Quaternion(0, 0, angle / 180 * 3.14);
 
             pose.pose.orientation.w = angel.w();
             pose.pose.orientation.x = angel.x();
@@ -161,17 +160,6 @@ int main(int argc, char **argv)
 
     // the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
-
-    // tf::Quaternion q;
-    // q.setRPY(1, 1, 1);
-    // cout << "Euler2Quaternion result is : " << endl;
-    // cout << "x =  " << q.x << endl;
-    // cout << "y =  " << q.y << endl;
-    // cout << "z =  " << q.z << endl;
-    // cout << "w =  " << q.w << endl
-    //      << endl;
-
-    tf::Quaternion createQuaternionFromRPY(double roll, double pitch, double yaw);
 
     load_point();
 
