@@ -16,6 +16,7 @@
 #include <Eigen/Core>
 #include <vector>
 #include <math.h>
+#include <tf/tf.h>
 
 using namespace std;
 using namespace Eigen;
@@ -23,7 +24,7 @@ using namespace Eigen;
 int NUM_point = 100;
 #define hight_init 0.3f
 
-string data_file = "src/simulation/src/position.txt";
+string data_file = "src/experiments/src/attitude.txt";
 geometry_msgs::PoseStamped pose;
 geometry_msgs::PoseStamped current_pose;
 
@@ -57,9 +58,9 @@ float ABS(float num)
 
 Eigen::Quaterniond euler2Quaternion(const double roll, const double pitch, const double yaw)
 {
-    Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitZ());
-    Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitY());
-    Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitX());
+    Eigen::AngleAxisd yawAngle(yaw, Eigen::Vector3d::UnitZ());
+    Eigen::AngleAxisd pitchAngle(pitch, Eigen::Vector3d::UnitY());
+    Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
 
     Eigen::Quaterniond q = rollAngle * yawAngle * pitchAngle;
     // cout << "Euler2Quaternion result is : " << endl;
@@ -84,15 +85,15 @@ void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
             pose.pose.position.z = poseArr[poseCount][2];
             angle = poseArr[poseCount][3];
 
-            Eigen::Quaterniond angel = euler2Quaternion(0, 0, angle / 180 * 3.14159);
+            ROS_INFO("Num %d Position Setted", poseCount);
+            ROS_INFO("x:%f y:%f z:%f angle:%f", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z, angle);
+
+            Eigen::Quaterniond angel = euler2Quaternion(0, 0, angle);
 
             pose.pose.orientation.w = angel.w();
             pose.pose.orientation.x = angel.x();
             pose.pose.orientation.y = angel.y();
             pose.pose.orientation.z = angel.z();
-
-            ROS_INFO("Num %d Position Setted", poseCount);
-            ROS_INFO("x:%f y:%f z:%f", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
         }
         else
         {
@@ -108,6 +109,7 @@ void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
         poseArr[0][0] = pose.pose.position.x;
         poseArr[0][1] = pose.pose.position.y;
         poseArr[0][2] = hight_init;
+        poseArr[0][3] = 0;
 
         pose_init_done = true;
         ROS_INFO("position init x:%f y:%f,z:%f", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z);
@@ -129,7 +131,7 @@ void load_point(void)
 
     for (int i = 1; i < 500; i++)
     {
-        if (poseArr[i][0] == 0 && poseArr[i][1] == 0 && poseArr[i][2] == 0)
+        if (poseArr[i][0] == 0 && poseArr[i][1] == 0 && poseArr[i][2] == 0 && poseArr[i][3] == 0)
         {
             NUM_point = i;
             break;
@@ -157,22 +159,21 @@ int main(int argc, char **argv)
     ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 10);
     ros::Subscriber position_sub = nh.subscribe<geometry_msgs::PoseStamped>("mavros/local_position/pose", 10, position_cb);
 
-    /***仿真***/
-    ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
-    ros::ServiceClient set_mode_client = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
-    /***END***/
-
     // the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
 
+    // tf::Quaternion q;
+    // q.setRPY(1, 1, 1);
+    // cout << "Euler2Quaternion result is : " << endl;
+    // cout << "x =  " << q.x << endl;
+    // cout << "y =  " << q.y << endl;
+    // cout << "z =  " << q.z << endl;
+    // cout << "w =  " << q.w << endl
+    //      << endl;
+
+    tf::Quaternion createQuaternionFromRPY(double roll, double pitch, double yaw);
+
     load_point();
-
-    Eigen::Quaterniond angel = euler2Quaternion(1, 1, 1);
-
-    pose.pose.orientation.w = angel.w();
-    pose.pose.orientation.x = angel.x();
-    pose.pose.orientation.y = angel.y();
-    pose.pose.orientation.z = angel.z();
 
     // wait for FCU connection
     while (ros::ok() && !current_state.connected && pose_init_done)
@@ -190,43 +191,10 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
-    /***仿真***/
-    mavros_msgs::SetMode offb_set_mode;
-    offb_set_mode.request.custom_mode = "OFFBOARD";
-
-    mavros_msgs::CommandBool arm_cmd;
-    arm_cmd.request.value = true;
-    /***END***/
-
     ros::Time last_request = ros::Time::now();
 
     while (ros::ok())
     {
-        /***仿真***/
-        if (current_state.mode != "OFFBOARD" &&
-            (ros::Time::now() - last_request > ros::Duration(5.0)))
-        {
-            if (set_mode_client.call(offb_set_mode) &&
-                offb_set_mode.response.mode_sent)
-            {
-                ROS_INFO("Offboard enabled");
-            }
-            last_request = ros::Time::now();
-        }
-        else
-        {
-            if (!current_state.armed &&
-                (ros::Time::now() - last_request > ros::Duration(5.0)))
-            {
-                if (arming_client.call(arm_cmd) &&
-                    arm_cmd.response.success)
-                {
-                    ROS_INFO("Vehicle armed");
-                }
-                last_request = ros::Time::now();
-            }
-        }
-        /***END***/
 
         local_pos_pub.publish(pose);
 
