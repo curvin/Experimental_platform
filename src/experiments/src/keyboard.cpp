@@ -37,7 +37,7 @@ char getch()
 std_msgs::Bool key;
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "position_control_node");
+    ros::init(argc, argv, "keyboard_node");
     ros::NodeHandle nh;
 
     ros::Publisher keyboard_pub = nh.advertise<std_msgs::Bool>("uav/keyboard", 10);

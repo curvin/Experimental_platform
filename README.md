@@ -17,6 +17,9 @@ MPC_XY_VEL_MAX 0.5
 MPC_Z_VEL_MAX_DN 0.5
 MPC_Z_VEL_MAX_UP 0.5
 
+#角速度设置
+60deg/s
+
 #PX4默认PID
 MPC_XY_VEL_P_ACC 1.8
 MPC_XY_VEL_I_ACC 0.6
@@ -35,7 +38,7 @@ MPC_Z_P 1.20
 - 首先在自稳模式下将PID参数调稳定，调试`Multicopter Rate Control`菜单下`MC_ROLLRATE_P`, `MC_ROLLRATE_I`, `MC_ROLLRATE_D`,`MC_PITCHRATE_P`,`MC_PITCHRATE_I`,`MC_PITCHRATE_D`这六个参数即可
 - 自稳PID调试完成后，此时飞行会发现飞行器总是会朝某个方向“倾斜”飞行，此时最好先将机体各部位都固定稳定，中心最好在机体中心（电池位置最好也固定，不然电池的拆卸也是影响重心的一个要点）。然后调试`Sensors`菜单下的`SENS_BOARD_X_OFF`和`SENS_BOARD_Y_OFF`两个参数，最完美的状态是调试到roll和pitch不总是朝一个方向飞行，只会随机朝某个方向缓慢飞行
 - 随后切换到offboard模式进行定位调试，如果设置指定高度后飞行器一直飞行不到指定高度，请增大`Multicopter Position Control`菜单下的`MPC_THR_HOVER`和`MPC_Z_P`参数
-- 随后调试定位的参数，`Multicopter Position Control`菜单下的`MPC_XY_P`,`MPC_XY_TRAJ_P`,`MPC_XY_VEL_D_ACC`,`MPC_XY_VEL_I_ACC`,`MPC_XY_VEL_P_ACC`这几个参数，注意增大其中`MPC_XY_VEL_I_ACC`参数对减小偏移有显著效果
+- -   随后调试定位的参数，`Multicopter Position Control`菜单下的`MPC_XY_P`,`MPC_XY_TRAJ_P`,`MPC_XY_VEL_D_ACC`,`MPC_XY_VEL_I_ACC`,`MPC_XY_VEL_P_ACC`这几个参数，注意增大其中`MPC_XY_VEL_I_ACC`参数对减小偏移有显著效果
 
 ## MAVESP8266
 
@@ -54,9 +57,7 @@ https://firmware.ardupilot.org/Tools/MAVESP8266/latest/
 ## 安装MAVROS
 ``` shell
 sudo apt-get install ros-<ros_vision>-mavros ros-<ros_vision>-mavros-extras
-wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/
-	 wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/
-	 install_geographiclib_datasets.sh
+wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
 sudo bash ./install_geographiclib_datasets.sh
 #若wget失败，可直接下载sh文件运行
 ```
@@ -107,18 +108,84 @@ roslaunch vrpn_client_ros sample.launch  server：=192.168.31.128
 #将参数server修改为动捕的ip地址
 #将参数gcs_url修改为运行qgc主机的ip地址
 
-#完成上述操作，运行launch
+#完成上述操作，在工程目录新建终端
+source devel/setup.bash
+#运行launch
 roslaunch experiments  system_init.launch 
 
-#新建终端
+#在工程目录新建终端
+source devel/setup.bash
 rostopic echo /mavros/state
 #检查是否能切换到位置控制模式，可以切换则进行下一步操作
 
 #打开position.txt，将坐标点复制到文件中
 
 #运行position_control节点
-rosrun experiments position_control 
+rosrun experiments position
 #检查读取的坐标点是否有误，无误则进行下一步
+
+#无人机解锁，切换到offboard模式，无人机自动起飞，执行完任务后在任务终点悬停
+```
+
+## 连续位姿控制
+``` shell 
+#修改system_init.launch 
+#将参数fcu_url修改为当前无人机的ip地址
+#将参数server修改为动捕的ip地址
+#将参数gcs_url修改为运行qgc主机的ip地址
+
+#完成上述操作，在工程目录新建终端
+source devel/setup.bash
+#运行launch
+roslaunch experiments  system_init.launch 
+
+#在工程目录新建终端
+source devel/setup.bash
+rostopic echo /mavros/state
+#检查是否能切换到位置控制模式，可以切换则进行下一步操作
+
+#打开attitude.txt，将坐标点复制到文件中
+
+#运行attitude节点
+rosrun experiments attitude 
+#检查读取的坐标点是否有误，无误则进行下一步
+
+#无人机解锁，切换到offboard模式，无人机自动起飞，执行完任务后在任务终点悬停
+```
+
+## 单点位姿控制
+``` shell 
+#修改system_init.launch 
+#将参数fcu_url修改为当前无人机的ip地址
+#将参数server修改为动捕的ip地址
+#将参数gcs_url修改为运行qgc主机的ip地址
+
+#完成上述操作，在工程目录新建终端
+source devel/setup.bash
+#运行launch
+roslaunch experiments  system_init.launch 
+
+#在工程目录新建终端
+source devel/setup.bash
+rostopic echo /mavros/state
+#检查是否能切换到位置控制模式，可以切换则进行下一步操作
+
+#打开attitude.txt，将坐标点复制到文件中
+
+#在工程目录新建终端
+source devel/setup.bash
+
+#运行attitude_step节点
+rosrun experiments attitude_step 
+#检查读取的坐标点是否有误，无误则进行下一步
+
+
+#在工程目录新建终端
+source devel/setup.bash
+
+#运行keyboard节点
+rosrun experiments keyboard 
+#按空格键控制无人机飞往下一个节点
 
 #无人机解锁，切换到offboard模式，无人机自动起飞，执行完任务后在任务终点悬停
 ```

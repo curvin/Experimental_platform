@@ -153,7 +153,7 @@ void load_point(void)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "keyboard_node");
+    ros::init(argc, argv, "attitude_step_node");
     ros::NodeHandle nh;
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, state_cb);

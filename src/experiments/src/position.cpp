@@ -114,7 +114,7 @@ void load_point(void)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "position_control_node");
+    ros::init(argc, argv, "position_node");
     ros::NodeHandle nh;
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, state_cb);
