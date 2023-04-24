@@ -96,7 +96,7 @@ sudo apt-get install ros-<your ros vision>-vrpn*
 
 ## 运行VRPN
 ``` shell
-roslaunch vrpn_client_ros sample.launch  server：=192.168.31.128
+roslaunch vrpn_client_ros sample.launch  server:=192.168.31.128
 #IP地址为动捕主机IP地址
 ```
 
