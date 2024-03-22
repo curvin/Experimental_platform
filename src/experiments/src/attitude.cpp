@@ -20,7 +20,7 @@
 using namespace std;
 using namespace Eigen;
 
-int NUM_point = 100;
+int NUM_point = 1000;
 #define hight_init 0.3f
 
 string data_file = "src/experiments/src/attitude.txt";
@@ -151,12 +151,25 @@ void load_point(void)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "attitude_node");
+    std::string uav_id;
+    if(argc!=2)
+    {
+        printf("ERROR!!!\r\n");
+        printf("ERROR!!!\r\n");
+        printf("ERROR!!!\r\n");
+        printf("Please input uav id!!!\r\n");
+        return 1;
+    }
+    else
+    {
+        uav_id=argv[1];
+    }
+    ros::init(argc, argv, uav_id+"_attitude_node");
     ros::NodeHandle nh;
 
-    ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, state_cb);
-    ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 10);
-    ros::Subscriber position_sub = nh.subscribe<geometry_msgs::PoseStamped>("mavros/local_position/pose", 10, position_cb);
+    ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>(uav_id+"/mavros/state", 10, state_cb);
+    ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>(uav_id+"/mavros/setpoint_position/local", 10);
+    ros::Subscriber position_sub = nh.subscribe<geometry_msgs::PoseStamped>(uav_id+"/mavros/local_position/pose", 10, position_cb);
 
     // the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);

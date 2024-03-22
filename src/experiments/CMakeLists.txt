@@ -153,11 +153,6 @@ include_directories(
 
 include_directories("/usr/include/eigen3")
 
-add_executable(position src/position.cpp)
-target_link_libraries(position
-  ${catkin_LIBRARIES}
-)
-
 add_executable(attitude src/attitude.cpp)
 target_link_libraries(attitude
   ${catkin_LIBRARIES}

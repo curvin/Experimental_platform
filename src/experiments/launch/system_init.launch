@@ -1,21 +1,22 @@
+<?xml version="1.0"?>
 <launch>
-    <arg name="fcu_url" default="udp://:14550@192.168.31.52:12345"/>
-    <arg name="server" default="192.168.31.128"/>
-    <!-- <arg name="gcs_url" default="udp://@192.168.31.27" /> -->
-
-    <!-- This node will launch the ROS driver for Realsense T265 -->
+    <!-- 设置动捕IP -->
+    <arg name="server" default="192.168.1.128"/>
     <include file="$(find vrpn_client_ros)/launch/sample.launch">
         <arg name="server" default="$(arg server)"/>
     </include>
-
-    <!-- This node will launch MAVROS -->
-    <include file="$(find mavros)/launch/px4.launch">
-        <arg  name="fcu_url" value="$(arg fcu_url)" />
-        <!-- <arg  name="gcs_url" value="$(arg gcs_url)" /> -->
-    </include>
-
-    <!-- This node will launch the node that bridges realsense-ros and MAVROS -->
-    <node pkg="topic_tools" type="relay" name="vrpn_to_mavros" args="/vrpn_client_node/UAV_01/pose /mavros/vision_pose/pose" />
     
-</launch>
+    <group ns="UAV_01">
+        <!-- 设置无人机名称与数传IP -->
+        <arg name="uav_id" default="UAV_01"/>
+        <arg name="fcu_url" default="udp://:14550@192.168.31.52:12345"/>
+        
+        <include file="$(find mavros)/launch/px4.launch">
+            <arg  name="fcu_url" value="$(arg fcu_url)" />
+        </include>
+        <node pkg="topic_tools" type="relay" name="vrpn_to_mavros" args="/vrpn_client_node/$(arg uav_id)/pose $(arg uav_id)/mavros/vision_pose/pose">
+            <param name="uav_id" value="$(arg uav_id)" />
+        </node>
+    </group>
 
+</launch>
