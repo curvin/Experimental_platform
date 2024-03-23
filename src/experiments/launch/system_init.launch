@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <!-- 设置动捕IP -->
-    <arg name="server" default="192.168.1.128"/>
+    <arg name="server" default="192.168.1.116"/>
     <include file="$(find vrpn_client_ros)/launch/sample.launch">
         <arg name="server" default="$(arg server)"/>
     </include>
@@ -9,12 +9,12 @@
     <group ns="UAV_01">
         <!-- 设置无人机名称与数传IP -->
         <arg name="uav_id" default="UAV_01"/>
-        <arg name="fcu_url" default="udp://:14550@192.168.31.52:12345"/>
+        <arg name="fcu_url" default="udp://:14555@192.168.1.52:14550"/>
         
         <include file="$(find mavros)/launch/px4.launch">
             <arg  name="fcu_url" value="$(arg fcu_url)" />
         </include>
-        <node pkg="topic_tools" type="relay" name="vrpn_to_mavros" args="/vrpn_client_node/$(arg uav_id)/pose $(arg uav_id)/mavros/vision_pose/pose">
+        <node pkg="topic_tools" type="relay" name="vrpn_to_mavros" args="/vrpn_client_node/$(arg uav_id)/pose mavros/vision_pose/pose">
             <param name="uav_id" value="$(arg uav_id)" />
         </node>
     </group>
