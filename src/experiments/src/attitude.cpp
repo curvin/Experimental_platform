@@ -23,7 +23,7 @@ using namespace Eigen;
 int NUM_point = 1000;
 #define hight_init 0.3f
 
-string data_file = "src/experiments/src/attitude.txt";
+
 geometry_msgs::PoseStamped pose;
 geometry_msgs::PoseStamped current_pose;
 
@@ -62,12 +62,7 @@ Eigen::Quaterniond euler2Quaternion(const double roll, const double pitch, const
     Eigen::AngleAxisd rollAngle(roll, Eigen::Vector3d::UnitX());
 
     Eigen::Quaterniond q = rollAngle * yawAngle * pitchAngle;
-    // cout << "Euler2Quaternion result is : " << endl;
-    // cout << "x =  " << q.x() << endl;
-    // cout << "y =  " << q.y() << endl;
-    // cout << "z =  " << q.z() << endl;
-    // cout << "w =  " << q.w() << endl
-    //      << endl;
+
     return q;
 }
 
@@ -115,9 +110,10 @@ void position_cb(const geometry_msgs::PoseStamped::ConstPtr &position_now)
     }
 }
 
-void load_point(void)
+void load_point(string uav_id)
 {
     ifstream infile;
+    string data_file = "src/experiments/src/"+uav_id+".txt";
     infile.open(data_file.c_str());
     for (int i = 1; i < 500; i++)
     {
@@ -174,7 +170,7 @@ int main(int argc, char **argv)
     // the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(20.0);
 
-    load_point();
+    load_point(uav_id);
 
     // wait for FCU connection
     while (ros::ok() && !current_state.connected && pose_init_done)
